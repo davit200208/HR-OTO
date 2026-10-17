@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: hr-oto-api
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: services/api
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health/live
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SECRET_STORAGE_PROVIDER
+        value: environment
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: BOOTSTRAP_TOKEN
+        generateValue: true

@@ -296,3 +296,8 @@ Latest Windows environment check: Flutter, Dart, CMake, Ninja, MSBuild, Inno Set
 - Run #4-ში Owner სინტაქსი უკვე გაიარა; ჩავარდა მოძველებული widget test, რომელიც ახალ Login UI-ში აღარ არსებულ `Foundation მზად არის` ტექსტს ეძებდა. სამივე აპის foundation test განახლდა რეალურ Login UI ტექსტებზე.
 - Run #5-ში ორივე აპის Analyze/Test ეტაპები წარმატებით გაიარა; Admin Windows build-ზე აღმოჩნდა Flutter CLI incompatibility — `flutter build windows`-ს `--target-platform` არგუმენტი არ აქვს. Workflow და local build script გასწორდა.
 - Run #6-მა Build, Packaging და smoke-test წარმატებით გაიარა, მაგრამ მომხმარებლის კომპიუტერზე Installer-ის გაშვებისას გამოვლინდა Inno Setup runtime-check-ის შეცდომა: `InitializeSetup()` GitHub Runner-ის დროებით source path-ს ამოწმებდა. ეს check ამოღებულია; source file validation უკვე Inno compile-ის `[Files]` ეტაპზე ხდება.
+## Supabase/Render deployment preparation
+
+- Added `render.yaml` for the FastAPI service with a production health check, secret generation, and runtime-only database/Redis variables.
+- Added a manual Windows release input for the public FastAPI URL so Admin and Owner no longer have to use `localhost` in release builds.
+- Actual Render deployment and Supabase connection verification remain pending until the deployment account permits the final external action and the Supabase database connection string is injected into Render Secret Environment Variables.
