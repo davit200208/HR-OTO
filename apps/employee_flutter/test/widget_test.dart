@@ -5,7 +5,7 @@ void main() {
   testWidgets('Employee foundation window renders', (tester) async {
     await tester.pumpWidget(const EmployeeApp());
     expect(find.text('HR-OTO Employee'), findsWidgets);
-    expect(find.text('Foundation მზად არის'), findsOneWidget);
+    expect(find.text('Company Code'), findsOneWidget);
   });
 }
 

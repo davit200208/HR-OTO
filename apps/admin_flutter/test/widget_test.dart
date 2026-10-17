@@ -5,7 +5,7 @@ void main() {
   testWidgets('Admin foundation window renders', (tester) async {
     await tester.pumpWidget(const AdminApp());
     expect(find.text('HR-OTO Admin'), findsWidgets);
-    expect(find.text('Foundation მზად არის'), findsOneWidget);
+    expect(find.text('Company Code'), findsOneWidget);
   });
 }
 
