@@ -1,0 +1,136 @@
+name: HR-OTO Windows Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Installer version, for example 1.0.0'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify Windows installers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Prepare Flutter stable SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Inno Setup and ImageMagick
+        shell: pwsh
+        run: |
+          choco install innosetup imagemagick.app --no-progress --yes
+
+      - name: Prepare branding icon on runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $logo = Join-Path $env:GITHUB_WORKSPACE 'assets\branding\oto-hr-logo.png'
+          $icon = Join-Path $env:GITHUB_WORKSPACE 'assets\branding\oto-hr-logo.ico'
+          if (-not (Test-Path $logo)) { throw "Logo source is missing: $logo" }
+          magick $logo -background none -define icon:auto-resize=256,128,64,48,32,16 $icon
+          if (-not (Test-Path $icon)) { throw "ICO generation failed: $icon" }
+
+      - name: Flutter doctor
+        shell: pwsh
+        run: flutter doctor -v
+
+      - name: Generate Windows platform folders and validate Flutter apps
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $apps = @('admin_flutter', 'owner_flutter')
+          foreach ($app in $apps) {
+            $dir = Join-Path $env:GITHUB_WORKSPACE "apps\$app"
+            Push-Location $dir
+            flutter create --platforms=windows .
+            flutter pub get
+            flutter analyze
+            flutter test
+            Pop-Location
+          }
+
+      - name: Build Admin Windows release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location "$env:GITHUB_WORKSPACE\apps\admin_flutter"
+          flutter build windows --release --target-platform windows-x64
+          Pop-Location
+
+      - name: Build Owner Windows release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location "$env:GITHUB_WORKSPACE\apps\owner_flutter"
+          flutter build windows --release --target-platform windows-x64
+          Pop-Location
+
+      - name: Package Admin and Owner installers
+        shell: pwsh
+        env:
+          BUILD_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = $env:GITHUB_WORKSPACE
+          $release = Join-Path $root 'releases'
+          New-Item -ItemType Directory -Force -Path $release | Out-Null
+          $adminExe = Join-Path $root 'apps\admin_flutter\build\windows\x64\runner\Release\hr_oto_admin.exe'
+          $ownerExe = Join-Path $root 'apps\owner_flutter\build\windows\x64\runner\Release\hr_oto_owner.exe'
+          if (-not (Test-Path $adminExe)) { throw "Admin release executable missing: $adminExe" }
+          if (-not (Test-Path $ownerExe)) { throw "Owner release executable missing: $ownerExe" }
+          iscc "/DROOT=$root" "/DRELEASE=$release" "/DAppVersion=$env:BUILD_VERSION" "$root\scripts\installer.iss"
+          iscc "/DROOT=$root" "/DRELEASE=$release" "/DAppVersion=$env:BUILD_VERSION" "$root\scripts\installer_owner.iss"
+          $adminSetup = Join-Path $release 'HR-OTO-Admin-Setup.exe'
+          $ownerSetup = Join-Path $release 'HR-OTO-Owner-Setup.exe'
+          if (-not (Test-Path $adminSetup)) { throw "Admin installer missing: $adminSetup" }
+          if (-not (Test-Path $ownerSetup)) { throw "Owner installer missing: $ownerSetup" }
+          Get-Item $adminSetup, $ownerSetup | Select-Object FullName, Length
+
+      - name: Smoke-test installers and installed executables
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $release = Join-Path $env:GITHUB_WORKSPACE 'releases'
+          $smoke = Join-Path $env:RUNNER_TEMP 'hr-oto-installer-smoke'
+          Remove-Item $smoke -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $smoke | Out-Null
+          $cases = @(
+            @{ Name = 'Admin'; Setup = (Join-Path $release 'HR-OTO-Admin-Setup.exe'); Exe = 'hr_oto_admin.exe' },
+            @{ Name = 'Owner'; Setup = (Join-Path $release 'HR-OTO-Owner-Setup.exe'); Exe = 'hr_oto_owner.exe' }
+          )
+          foreach ($case in $cases) {
+            $target = Join-Path $smoke $case.Name
+            $install = Start-Process -FilePath $case.Setup -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR=$target" -Wait -PassThru
+            if ($install.ExitCode -ne 0) { throw "$($case.Name) installer exited with $($install.ExitCode)" }
+            $installedExe = Join-Path $target $case.Exe
+            if (-not (Test-Path $installedExe)) { throw "$($case.Name) executable was not installed" }
+            $process = Start-Process -FilePath $installedExe -PassThru
+            Start-Sleep -Seconds 5
+            if ($process.HasExited) { throw "$($case.Name) executable exited during launch smoke test with $($process.ExitCode)" }
+            Stop-Process -Id $process.Id -Force
+            $uninstaller = Join-Path $target 'unins000.exe'
+            if (-not (Test-Path $uninstaller)) { throw "$($case.Name) uninstaller was not installed" }
+            $uninstall = Start-Process -FilePath $uninstaller -ArgumentList '/VERYSILENT /NORESTART' -Wait -PassThru
+            if ($uninstall.ExitCode -ne 0) { throw "$($case.Name) uninstaller exited with $($uninstall.ExitCode)" }
+          }
+
+      - name: Upload verified installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: hr-oto-windows-installers-${{ inputs.version }}
+          path: |
+            releases/HR-OTO-Admin-Setup.exe
+            releases/HR-OTO-Owner-Setup.exe
+          if-no-files-found: error
+          retention-days: 14

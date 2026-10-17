@@ -1,0 +1,17 @@
+.env
+.venv/
+.deps/
+tmp/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.dart_tool/
+build/
+coverage/
+*.iml
+.idea/
+.vscode/
+pubspec.lock
+
