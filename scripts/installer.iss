@@ -31,9 +31,3 @@ Name: "{group}\HR-OTO Admin"; Filename: "{app}\hr_oto_admin.exe"
 [Run]
 Filename: "{app}\hr_oto_admin.exe"; Description: "Launch HR-OTO Admin"; Flags: nowait postinstall skipifsilent
 
-[Code]
-function InitializeSetup(): Boolean;
-begin
-  Result := FileExists(ExpandConstant('{#ROOT}\apps\admin_flutter\build\windows\x64\runner\Release\hr_oto_admin.exe'));
-  if not Result then MsgBox('Verified Flutter Admin Release build was not found. Build was not packaged.', mbError, MB_OK);
-end;

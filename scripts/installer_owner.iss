@@ -30,9 +30,3 @@ Name: "{group}\HR-OTO Owner"; Filename: "{app}\hr_oto_owner.exe"
 [Run]
 Filename: "{app}\hr_oto_owner.exe"; Description: "Launch HR-OTO Owner"; Flags: nowait postinstall skipifsilent
 
-[Code]
-function InitializeSetup(): Boolean;
-begin
-  Result := FileExists(ExpandConstant('{#ROOT}\apps\owner_flutter\build\windows\x64\runner\Release\hr_oto_owner.exe'));
-  if not Result then MsgBox('Verified Flutter Owner Release build was not found. Build was not packaged.', mbError, MB_OK);
-end;
