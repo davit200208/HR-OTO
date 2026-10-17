@@ -17,7 +17,7 @@ foreach ($app in @('admin_flutter','owner_flutter')) {
   flutter pub get
   flutter analyze
   flutter test
-  flutter build windows --release --target-platform windows-x64
+  flutter build windows --release
   Pop-Location
 }
 

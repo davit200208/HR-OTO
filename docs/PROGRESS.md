@@ -294,3 +294,4 @@ Latest Windows environment check: Flutter, Dart, CMake, Ninja, MSBuild, Inno Set
 - შეცდომები გასწორდა Owner login, commercial dialog, packages page და integrations page-ის widget tree-ებში. შემდეგი ნაბიჯია ახალი commit/push და ხელახალი Workflow run.
 - Run #3-ში გამოვლინდა ერთი დარჩენილი ზედმეტი class-closing brace `IntegrationsPage`-ის ბოლოს; ის გასწორდა, ხოლო `flutter analyze`-ის დარჩენილი შეტყობინებები მხოლოდ lint warning/info-ებია.
 - Run #4-ში Owner სინტაქსი უკვე გაიარა; ჩავარდა მოძველებული widget test, რომელიც ახალ Login UI-ში აღარ არსებულ `Foundation მზად არის` ტექსტს ეძებდა. სამივე აპის foundation test განახლდა რეალურ Login UI ტექსტებზე.
+- Run #5-ში ორივე აპის Analyze/Test ეტაპები წარმატებით გაიარა; Admin Windows build-ზე აღმოჩნდა Flutter CLI incompatibility — `flutter build windows`-ს `--target-platform` არგუმენტი არ აქვს. Workflow და local build script გასწორდა.

@@ -65,7 +65,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           Push-Location "$env:GITHUB_WORKSPACE\apps\admin_flutter"
-          flutter build windows --release --target-platform windows-x64
+          flutter build windows --release
           Pop-Location
 
       - name: Build Owner Windows release
@@ -73,7 +73,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           Push-Location "$env:GITHUB_WORKSPACE\apps\owner_flutter"
-          flutter build windows --release --target-platform windows-x64
+          flutter build windows --release
           Pop-Location
 
       - name: Package Admin and Owner installers
