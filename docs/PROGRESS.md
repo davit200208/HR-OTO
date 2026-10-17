@@ -285,3 +285,10 @@ Latest Windows environment check: Flutter, Dart, CMake, Ninja, MSBuild, Inno Set
 - GitHub Actions run ჯერ არ შესრულებულა, ამიტომ `HR-OTO-Admin-Setup.exe` და `HR-OTO-Owner-Setup.exe` ამ ეტაპზე რეალურად შექმნილად არ ითვლება.
 - ადგილობრივად Flutter/Visual Studio/Inno Setup არ არის ხელმისაწვდომი; build მიზანმიმართულად გადატანილია GitHub Windows Runner-ზე.
 - Android/iOS build ამ ეტაპზე არ დაწყებულა.
+
+### GitHub Actions Run #1 verification
+
+- GitHub Windows Runner-ზე Flutter Stable, Inno Setup 6 და ImageMagick წარმატებით მომზადდა.
+- Runner-მა `flutter doctor -v` ეტაპიც გაიარა.
+- Run #1-მა `apps/owner_flutter/lib/main.dart`-ში Dart syntax errors გამოავლინა `flutter analyze/test` ეტაპზე; Installer build-მდე არ მისულა და Artifact არ შეიქმნა.
+- შეცდომები გასწორდა Owner login, commercial dialog, packages page და integrations page-ის widget tree-ებში. შემდეგი ნაბიჯია ახალი commit/push და ხელახალი Workflow run.

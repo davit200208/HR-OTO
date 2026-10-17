@@ -149,11 +149,40 @@ class _OwnerLoginState extends ConsumerState<OwnerLogin> {
   bool loading = false;
   String? error;
   @override
-  Widget build(BuildContext context) => Scaffold(body: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 460), child: Card(margin: const EdgeInsets.all(24), child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-    const HrOtoLogo(size: 100), const SizedBox(height: 20), Text('HR-OTO Owner', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('დამოუკიდებელი Super Admin მართვის ცენტრი'), const SizedBox(height: 24),
-    TextField(controller: email, decoration: const InputDecoration(labelText: 'ელფოსტა', prefixIcon: Icon(Icons.email_outlined))), const SizedBox(height: 12), TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'პაროლი', prefixIcon: Icon(Icons.lock_outline))), const SizedBox(height: 12), TextField(controller: mfa, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'MFA კოდი (თუ ჩართულია)', prefixIcon: Icon(Icons.verified_user_outlined))),
-    if (error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))), const SizedBox(height: 20), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: loading ? null : _login, icon: const Icon(Icons.login), label: Text(loading ? 'მიმდინარეობს...' : 'შესვლა'))),
-  ])))));
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Card(
+            margin: const EdgeInsets.all(24),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const HrOtoLogo(size: 100),
+                  const SizedBox(height: 20),
+                  Text('HR-OTO Owner', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  const Text('დამოუკიდებელი Super Admin მართვის ცენტრი'),
+                  const SizedBox(height: 24),
+                  TextField(controller: email, decoration: const InputDecoration(labelText: 'ელფოსტა', prefixIcon: Icon(Icons.email_outlined))),
+                  const SizedBox(height: 12),
+                  TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'პაროლი', prefixIcon: Icon(Icons.lock_outline))),
+                  const SizedBox(height: 12),
+                  TextField(controller: mfa, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'MFA კოდი (თუ ჩართულია)', prefixIcon: Icon(Icons.verified_user_outlined))),
+                  if (error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                  const SizedBox(height: 20),
+                  SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: loading ? null : _login, icon: const Icon(Icons.login), label: Text(loading ? 'მიმდინარეობს...' : 'შესვლა'))),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   Future<void> _login() async { setState(() { loading = true; error = null; }); try { await ref.read(ownerApiProvider).login(email.text.trim(), password.text, mfa.text.trim()); widget.onLoggedIn(); } on ApiException catch (e) { setState(() => error = e.message); } catch (_) { setState(() => error = 'სერვერთან დაკავშირება ვერ მოხერხდა'); } finally { if (mounted) setState(() => loading = false); } }
 }
 
@@ -194,7 +223,71 @@ class _CompaniesPageState extends ConsumerState<CompaniesPage> {
   Future<void> _details(Company c) async { try { final detail = await ref.read(ownerApiProvider).companyDetails(c.id); if (!mounted) return; showDialog(context: context, builder: (_) => AlertDialog(title: Text(detail.name), content: Text('Company ID: ${detail.id}\nCode: ${detail.code}\nSubdomain: ${detail.subdomain}\nStatus: ${detail.status}\nLicense: ${detail.licenseStatus}\nMonthly revenue: ${detail.revenue} ₾'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('დახურვა'))])); } catch (e) { _snack(e.toString()); } }
   Future<void> _companyDialog([Company? company]) async { final name = TextEditingController(text: company?.name), code = TextEditingController(text: company?.code), subdomain = TextEditingController(text: company?.subdomain), email = TextEditingController(), ownerName = TextEditingController(), password = TextEditingController(); final form = GlobalKey<FormState>(); await showDialog(context: context, builder: (dialogContext) => AlertDialog(title: Text(company == null ? 'კომპანიის დამატება' : 'კომპანიის რედაქტირება'), content: Form(key: form, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [TextFormField(controller: name, decoration: const InputDecoration(labelText: 'კომპანიის სახელი'), validator: (v) => v == null || v.length < 2 ? 'აუცილებელია' : null), TextFormField(controller: code, enabled: company == null, decoration: const InputDecoration(labelText: 'Company Code'), validator: (v) => v == null || v.length < 3 ? 'აუცილებელია' : null), TextFormField(controller: subdomain, decoration: const InputDecoration(labelText: 'Subdomain'), validator: (v) => v == null || v.length < 3 ? 'აუცილებელია' : null), if (company == null) ...[TextFormField(controller: ownerName, decoration: const InputDecoration(labelText: 'Company Owner სახელი')), TextFormField(controller: email, decoration: const InputDecoration(labelText: 'Company Owner ელფოსტა')), TextFormField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'საწყისი პაროლი'))]]))), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('გაუქმება')), FilledButton(onPressed: () async { if (!form.currentState!.validate()) return; try { if (company == null) { await ref.read(ownerApiProvider).createCompany({'name': name.text, 'company_code': code.text, 'subdomain': subdomain.text, 'owner_email': email.text, 'owner_name': ownerName.text, 'owner_password': password.text}); } else { await ref.read(ownerApiProvider).updateCompany(company.id, {'name': name.text, 'subdomain': subdomain.text}); } if (dialogContext.mounted) Navigator.pop(dialogContext); reload(); } catch (e) { _snack(e.toString()); } }, child: const Text('შენახვა'))])); }
   Future<void> _ownerDialog(Company c) async { final email = TextEditingController(), name = TextEditingController(), password = TextEditingController(); await showDialog(context: context, builder: (dialogContext) => AlertDialog(title: Text('Company Owner • ${c.name}'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: name, decoration: const InputDecoration(labelText: 'სახელი')), TextField(controller: email, decoration: const InputDecoration(labelText: 'ელფოსტა')), TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'პაროლი'))]), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('გაუქმება')), FilledButton(onPressed: () async { try { await ref.read(ownerApiProvider).createCompanyOwner(c.id, {'full_name': name.text, 'email': email.text, 'password': password.text}); if (dialogContext.mounted) Navigator.pop(dialogContext); _snack('Company Owner შეიქმნა'); } catch (e) { _snack(e.toString()); } }, child: const Text('შექმნა'))])); }
-  Future<void> _commercialDialog(Company company) async { final packages = await ref.read(ownerApiProvider).packages(); if (!mounted || packages.isEmpty) return; PackagePlan selected = packages.first; final monthly = TextEditingController(text: selected.monthly == '—' ? '' : selected.monthly), annual = TextEditingController(text: selected.annual == '—' ? '' : selected.annual), trialDays = TextEditingController(text: '14'), featureKey = TextEditingController(), limitKey = TextEditingController(), limitValue = TextEditingController(); await showDialog(context: context, builder: (dialogContext) => StatefulBuilder(builder: (context, setDialogState) => AlertDialog(title: Text('კომერციული პარამეტრები • ${company.name}'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [DropdownButton<PackagePlan>(value: selected, isExpanded: true, items: [for (final item in packages) DropdownMenuItem(value: item, child: Text('${item.name} • ${item.monthly} ${item.currency}/თვე'))], onChanged: (value) { if (value == null) return; setDialogState(() { selected = value; monthly.text = value.monthly == '—' ? '' : value.monthly; annual.text = value.annual == '—' ? '' : value.annual; }); }), TextField(controller: monthly, decoration: const InputDecoration(labelText: 'შეთანხმებული თვიური ფასი')), TextField(controller: annual, decoration: const InputDecoration(labelText: 'შეთანხმებული წლიური ფასი')), const Divider(), TextField(controller: trialDays, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Trial დღეები (0 = არ შეცვალო)')), TextField(controller: featureKey, decoration: const InputDecoration(labelText: 'Feature override key')), TextField(controller: limitKey, decoration: const InputDecoration(labelText: 'Limit override key')), TextField(controller: limitValue, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Limit override value'))])), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('გაუქმება')), FilledButton(onPressed: () async { try { await ref.read(ownerApiProvider).assignSubscription(company.id, {'package_id': selected.id, 'agreed_monthly_price': num.parse(monthly.text), 'agreed_annual_price': num.parse(annual.text), 'currency': selected.currency, 'starts_at': DateTime.now().toUtc().toIso8601String()}); final days = int.tryParse(trialDays.text) ?? 0; if (days > 0) await ref.read(ownerApiProvider).grantTrial(company.id, {'ends_at': DateTime.now().toUtc().add(Duration(days: days)).toIso8601String(), 'reason': 'Owner UI grant'}); if (featureKey.text.trim().isNotEmpty) await ref.read(ownerApiProvider).createOverride(company.id, {'kind': 'feature', 'key': featureKey.text.trim(), 'bool_value': true, 'effective_from': DateTime.now().toUtc().toIso8601String(), 'reason': 'Owner UI override'}); if (limitKey.text.trim().isNotEmpty) await ref.read(ownerApiProvider).createOverride(company.id, {'kind': 'limit', 'key': limitKey.text.trim(), 'int_value': int.parse(limitValue.text), 'effective_from': DateTime.now().toUtc().toIso8601String(), 'reason': 'Owner UI override'}); if (dialogContext.mounted) Navigator.pop(dialogContext); _snack('კომერციული პარამეტრები განახლდა'); } catch (e) { _snack(e.toString()); } }, child: const Text('შენახვა'))])); }
+  Future<void> _commercialDialog(Company company) async {
+    final packages = await ref.read(ownerApiProvider).packages();
+    if (!mounted || packages.isEmpty) return;
+    PackagePlan selected = packages.first;
+    final monthly = TextEditingController(text: selected.monthly == '—' ? '' : selected.monthly);
+    final annual = TextEditingController(text: selected.annual == '—' ? '' : selected.annual);
+    final trialDays = TextEditingController(text: '14');
+    final featureKey = TextEditingController();
+    final limitKey = TextEditingController();
+    final limitValue = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('კომერციული პარამეტრები • ${company.name}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<PackagePlan>(
+                  value: selected,
+                  isExpanded: true,
+                  items: [for (final item in packages) DropdownMenuItem(value: item, child: Text('${item.name} • ${item.monthly} ${item.currency}/თვე'))],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setDialogState(() {
+                      selected = value;
+                      monthly.text = value.monthly == '—' ? '' : value.monthly;
+                      annual.text = value.annual == '—' ? '' : value.annual;
+                    });
+                  },
+                ),
+                TextField(controller: monthly, decoration: const InputDecoration(labelText: 'შეთანხმებული თვიური ფასი')),
+                TextField(controller: annual, decoration: const InputDecoration(labelText: 'შეთანხმებული წლიური ფასი')),
+                const Divider(),
+                TextField(controller: trialDays, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Trial დღეები (0 = არ შეცვალო)')),
+                TextField(controller: featureKey, decoration: const InputDecoration(labelText: 'Feature override key')),
+                TextField(controller: limitKey, decoration: const InputDecoration(labelText: 'Limit override key')),
+                TextField(controller: limitValue, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Limit override value')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('გაუქმება')),
+            FilledButton(
+              onPressed: () async {
+                try {
+                  await ref.read(ownerApiProvider).assignSubscription(company.id, {'package_id': selected.id, 'agreed_monthly_price': num.parse(monthly.text), 'agreed_annual_price': num.parse(annual.text), 'currency': selected.currency, 'starts_at': DateTime.now().toUtc().toIso8601String()});
+                  final days = int.tryParse(trialDays.text) ?? 0;
+                  if (days > 0) await ref.read(ownerApiProvider).grantTrial(company.id, {'ends_at': DateTime.now().toUtc().add(Duration(days: days)).toIso8601String(), 'reason': 'Owner UI grant'});
+                  if (featureKey.text.trim().isNotEmpty) await ref.read(ownerApiProvider).createOverride(company.id, {'kind': 'feature', 'key': featureKey.text.trim(), 'bool_value': true, 'effective_from': DateTime.now().toUtc().toIso8601String(), 'reason': 'Owner UI override'});
+                  if (limitKey.text.trim().isNotEmpty) await ref.read(ownerApiProvider).createOverride(company.id, {'kind': 'limit', 'key': limitKey.text.trim(), 'int_value': int.parse(limitValue.text), 'effective_from': DateTime.now().toUtc().toIso8601String(), 'reason': 'Owner UI override'});
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  _snack('კომერციული პარამეტრები განახლდა');
+                } catch (e) {
+                  _snack(e.toString());
+                }
+              },
+              child: const Text('შენახვა'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   void _snack(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
@@ -203,7 +296,56 @@ class _PackagesPageState extends ConsumerState<PackagesPage> {
   late Future<List<PackagePlan>> future;
   @override void initState() { super.initState(); future = ref.read(ownerApiProvider).packages(); }
   void reload() => setState(() => future = ref.read(ownerApiProvider).packages());
-  @override Widget build(BuildContext context) => Column(children: [Padding(padding: const EdgeInsets.all(24), child: Row(children: [Expanded(child: Text('პაკეტები, ფასები და ლიმიტები', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))), FilledButton.icon(onPressed: () => _dialog(), icon: const Icon(Icons.add), label: const Text('ახალი პაკეტი'))])), Expanded(child: FutureBuilder<List<PackagePlan>>(future: future, builder: (context, snapshot) { if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator()); if (snapshot.hasError) return _ErrorState(message: snapshot.error.toString(), onRetry: reload); final items = snapshot.data ?? []; return ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 24), itemCount: items.length, separatorBuilder: (_, __) => const SizedBox(height: 8), itemBuilder: (_, i) { final p = items[i]; return Card(child: ExpansionTile(title: Text('${p.name} (${p.code})'), subtitle: Text('${p.monthly} ${p.currency}/თვე • ${p.annual} ${p.currency}/წელი'), trailing: Wrap(children: [IconButton(tooltip: 'რედაქტირება', onPressed: () => _dialog(p), icon: const Icon(Icons.edit_outlined)), IconButton(tooltip: p.archived ? 'გააქტიურება' : 'არქივირება', onPressed: () async { await ref.read(ownerApiProvider).updatePackage(p.id, {'archive': !p.archived}); reload(); }, icon: Icon(p.archived ? Icons.unarchive_outlined : Icons.archive_outlined))]), children: [Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Features: ${p.features.entries.where((e) => e.value).map((e) => e.key).join(', ')}'), const SizedBox(height: 8), Text('Limits: ${p.limits.entries.map((e) => '${e.key}=${e.value}').join(' • ')}')]))]); }); }))]);
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Expanded(child: Text('პაკეტები, ფასები და ლიმიტები', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
+                FilledButton.icon(onPressed: () => _dialog(), icon: const Icon(Icons.add), label: const Text('ახალი პაკეტი')),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<PackagePlan>>(
+              future: future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+                if (snapshot.hasError) return _ErrorState(message: snapshot.error.toString(), onRetry: reload);
+                final items = snapshot.data ?? [];
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) {
+                    final p = items[i];
+                    return Card(
+                      child: ExpansionTile(
+                        title: Text('${p.name} (${p.code})'),
+                        subtitle: Text('${p.monthly} ${p.currency}/თვე • ${p.annual} ${p.currency}/წელი'),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(tooltip: 'რედაქტირება', onPressed: () => _dialog(p), icon: const Icon(Icons.edit_outlined)),
+                            IconButton(tooltip: p.archived ? 'გააქტიურება' : 'არქივირება', onPressed: () async { await ref.read(ownerApiProvider).updatePackage(p.id, {'archive': !p.archived}); reload(); }, icon: Icon(p.archived ? Icons.unarchive_outlined : Icons.archive_outlined)),
+                          ],
+                        ),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Features: ${p.features.entries.where((e) => e.value).map((e) => e.key).join(', ')}'), const SizedBox(height: 8), Text('Limits: ${p.limits.entries.map((e) => '${e.key}=${e.value}').join(' • ')}')]),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      );
   Future<void> _dialog([PackagePlan? current]) async { final code = TextEditingController(text: current?.code), name = TextEditingController(text: current?.name), description = TextEditingController(text: current?.description), monthly = TextEditingController(text: current?.monthly == '—' ? '' : current?.monthly), annual = TextEditingController(text: current?.annual == '—' ? '' : current?.annual), currency = TextEditingController(text: current?.currency ?? 'GEL'), features = TextEditingController(text: current?.features.keys.where((key) => current!.features[key] == true).join(', ') ?? 'employees, attendance, leave, reports'), employees = TextEditingController(text: current?.limits['employees']?.toString() ?? '15'), administrators = TextEditingController(text: current?.limits['administrators']?.toString() ?? '2'), managers = TextEditingController(text: current?.limits['managers']?.toString() ?? '3'), branches = TextEditingController(text: current?.limits['branches']?.toString() ?? '1'), devices = TextEditingController(text: current?.limits['devices']?.toString() ?? '20'), storage = TextEditingController(text: current?.limits['storage_mb']?.toString() ?? '1024'), sms = TextEditingController(text: current?.limits['sms_quota']?.toString() ?? '100'), email = TextEditingController(text: current?.limits['email_quota']?.toString() ?? '1000'); final form = GlobalKey<FormState>(); final limits = {'employees': employees, 'administrators': administrators, 'managers': managers, 'branches': branches, 'devices': devices, 'storage_mb': storage, 'sms_quota': sms, 'email_quota': email}; await showDialog(context: context, builder: (dialogContext) => AlertDialog(title: Text(current == null ? 'პაკეტის შექმნა' : 'პაკეტის რედაქტირება'), content: SizedBox(width: 540, child: SingleChildScrollView(child: Form(key: form, child: Column(children: [TextFormField(controller: name, decoration: const InputDecoration(labelText: 'სახელი'), validator: (v) => v == null || v.length < 2 ? 'აუცილებელია' : null), TextFormField(controller: code, enabled: current == null, decoration: const InputDecoration(labelText: 'კოდი (მაგ. START)'), validator: (v) => v == null || v.length < 2 ? 'აუცილებელია' : null), TextField(controller: description, decoration: const InputDecoration(labelText: 'აღწერა')), Row(children: [Expanded(child: TextFormField(controller: monthly, decoration: const InputDecoration(labelText: 'თვიური ფასი'), validator: (v) => num.tryParse(v ?? '') == null ? 'რიცხვი' : null)), const SizedBox(width: 8), Expanded(child: TextFormField(controller: annual, decoration: const InputDecoration(labelText: 'წლიური ფასი'), validator: (v) => num.tryParse(v ?? '') == null ? 'რიცხვი' : null)), const SizedBox(width: 8), SizedBox(width: 80, child: TextField(controller: currency, decoration: const InputDecoration(labelText: 'ვალუტა')))]), TextField(controller: features, decoration: const InputDecoration(labelText: 'Features (მძიმით გამოყოფილი)')), const SizedBox(height: 8), const Align(alignment: Alignment.centerLeft, child: Text('ლიმიტები')), for (final entry in limits.entries) TextField(controller: entry.value, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: entry.key))])))), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('გაუქმება')), FilledButton(onPressed: () async { if (!form.currentState!.validate()) return; final featureMap = {for (final key in features.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty)) key: true}; final limitMap = {for (final entry in limits.entries) entry.key: int.tryParse(entry.value.text) ?? 0}; try { if (current == null) { await ref.read(ownerApiProvider).createPackage({'code': code.text.toUpperCase(), 'name': name.text, 'description': description.text, 'monthly_price': num.parse(monthly.text), 'annual_price': num.parse(annual.text), 'currency': currency.text.toUpperCase(), 'features': featureMap, 'limits': limitMap}); } else { await ref.read(ownerApiProvider).updatePackage(current.id, {'name': name.text, 'description': description.text}); await ref.read(ownerApiProvider).addPriceVersion(current.id, {'monthly_price': num.parse(monthly.text), 'annual_price': num.parse(annual.text), 'currency': currency.text.toUpperCase(), 'discount_percent': 0, 'effective_from': DateTime.now().toUtc().toIso8601String()}); for (final entry in featureMap.entries) { await ref.read(ownerApiProvider).updateFeature(current.id, entry.key, entry.value); } for (final entry in limitMap.entries) { await ref.read(ownerApiProvider).updateLimit(current.id, entry.key, entry.value); } } if (dialogContext.mounted) Navigator.pop(dialogContext); reload(); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); } }, child: const Text('შენახვა'))])); }
 }
 
@@ -212,11 +354,39 @@ class _IntegrationsPageState extends ConsumerState<IntegrationsPage> {
   late Future<List<Map<String, dynamic>>> future;
   @override void initState() { super.initState(); future = ref.read(ownerApiProvider).providers(); }
   void reload() => setState(() => future = ref.read(ownerApiProvider).providers());
-  @override Widget build(BuildContext context) => FutureBuilder<List<Map<String, dynamic>>>(future: future, builder: (context, snapshot) {
-    if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-    if (snapshot.hasError) return _ErrorState(message: snapshot.error.toString(), onRetry: reload);
-    final items = snapshot.data ?? const <Map<String, dynamic>>[];
-    return ListView(padding: const EdgeInsets.all(24), children: [Text('Integrations → SMS & Email Providers', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('API Keys ინახება მხოლოდ სერვერულ Secret Storage-ში და UI-ში სრულად არასდროს ბრუნდება.'), const SizedBox(height: 20), for (final item in items) Card(child: ListTile(leading: Icon(item['provider'] == 'brevo' ? Icons.email_outlined : Icons.sms_outlined), title: Text(item['provider'].toString().toUpperCase()), subtitle: Text('${item['enabled'] == true ? 'აქტიური' : 'გამორთული'} • ${item['secret_configured'] == true ? item['secret_masked'] : 'Secret არ არის კონფიგურირებული'} • Test: ${item['last_test_status']}'), trailing: Wrap(spacing: 4, children: [IconButton(tooltip: 'Test Connection', onPressed: () async { final r = await ref.read(ownerApiProvider).testProvider(item['provider'].toString()); if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r['live_verified'] == true ? 'რეალური provider connection წარმატებულია' : 'ტესტი ვერ დადასტურდა: ${r['error']}'))); reload(); }, icon: const Icon(Icons.wifi_tethering)), IconButton(tooltip: item['enabled'] == true ? 'გამორთვა' : 'ჩართვა', onPressed: () async { await ref.read(ownerApiProvider).updateProvider(item['provider'].toString(), {'enabled': item['enabled'] != true}); reload(); }, icon: Icon(item['enabled'] == true ? Icons.toggle_on : Icons.toggle_off))])))]);
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<Map<String, dynamic>>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return _ErrorState(message: snapshot.error.toString(), onRetry: reload);
+          final items = snapshot.data ?? const <Map<String, dynamic>>[];
+          return ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text('Integrations → SMS & Email Providers', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              const Text('API Keys ინახება მხოლოდ სერვერულ Secret Storage-ში და UI-ში სრულად არასდროს ბრუნდება.'),
+              const SizedBox(height: 20),
+              for (final item in items)
+                Card(
+                  child: ListTile(
+                    leading: Icon(item['provider'] == 'brevo' ? Icons.email_outlined : Icons.sms_outlined),
+                    title: Text(item['provider'].toString().toUpperCase()),
+                    subtitle: Text('${item['enabled'] == true ? 'აქტიური' : 'გამორთული'} • ${item['secret_configured'] == true ? item['secret_masked'] : 'Secret არ არის კონფიგურირებული'} • Test: ${item['last_test_status']}'),
+                    trailing: Wrap(
+                      spacing: 4,
+                      children: [
+                        IconButton(tooltip: 'Test Connection', onPressed: () async { final result = await ref.read(ownerApiProvider).testProvider(item['provider'].toString()); if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['live_verified'] == true ? 'რეალური provider connection წარმატებულია' : 'ტესტი ვერ დადასტურდა: ${result['error']}'))); reload(); }, icon: const Icon(Icons.wifi_tethering)),
+                        IconButton(tooltip: item['enabled'] == true ? 'გამორთვა' : 'ჩართვა', onPressed: () async { await ref.read(ownerApiProvider).updateProvider(item['provider'].toString(), {'enabled': item['enabled'] != true}); reload(); }, icon: Icon(item['enabled'] == true ? Icons.toggle_on : Icons.toggle_off)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
   }
 }
 
