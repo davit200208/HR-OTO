@@ -387,7 +387,6 @@ class _IntegrationsPageState extends ConsumerState<IntegrationsPage> {
           );
         },
       );
-  }
 }
 
 class AuditPage extends ConsumerStatefulWidget { const AuditPage({super.key}); @override ConsumerState<AuditPage> createState() => _AuditPageState(); }

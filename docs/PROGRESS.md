@@ -292,3 +292,4 @@ Latest Windows environment check: Flutter, Dart, CMake, Ninja, MSBuild, Inno Set
 - Runner-მა `flutter doctor -v` ეტაპიც გაიარა.
 - Run #1-მა `apps/owner_flutter/lib/main.dart`-ში Dart syntax errors გამოავლინა `flutter analyze/test` ეტაპზე; Installer build-მდე არ მისულა და Artifact არ შეიქმნა.
 - შეცდომები გასწორდა Owner login, commercial dialog, packages page და integrations page-ის widget tree-ებში. შემდეგი ნაბიჯია ახალი commit/push და ხელახალი Workflow run.
+- Run #3-ში გამოვლინდა ერთი დარჩენილი ზედმეტი class-closing brace `IntegrationsPage`-ის ბოლოს; ის გასწორდა, ხოლო `flutter analyze`-ის დარჩენილი შეტყობინებები მხოლოდ lint warning/info-ებია.
